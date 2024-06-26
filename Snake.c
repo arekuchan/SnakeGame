@@ -8,12 +8,15 @@
 #include <unistd.h>
 #include <math.h>
 
-
 #define ROW 20
 #define COL 40
 #define MAXTRAPS 20
 
 // compile with -lncursesw
+
+#ifdef INCL_WELCOME_MSG
+int displayedWelcome = 0;
+#endif
 
 int field[ROW][COL], x, y, gY, head, tail, game, frogs, userIO, dir, score, highscore, hsFileNull, toggleTraps, numTraps, playing = 1;
 FILE* highscoreData;
@@ -35,6 +38,8 @@ void loadHighscore() {
 }
 
 void snakeInit() {
+    clear(); // clear screen
+
     srand(time(0));
     x = ROW / 2;
     y = COL / 2;
@@ -214,6 +219,11 @@ void gameOver() {
 
     printf("You lose! Your score was: %d\n", score);
     usleep(5000 * 500);
+
+    printf("Starting a new game...\n");
+
+    clear();
+    snakeInit();
 }
 
 
@@ -291,13 +301,36 @@ void moveSnake(int dir) {
     field[x][y] = head;
 }
 
+int isOpposite(int movement, int prev) {
+    int isOpposite = 0;
+
+    switch (movement) {
+        case 'w':
+          isOpposite = (prev == 'e');
+          break;
+        case 's':
+          isOpposite = (prev == 'w');
+          break;
+        case 'a':
+          isOpposite = (prev == 'd');
+          break;
+        case 'd':
+          isOpposite = (prev == 'a');
+          break;
+    }
+
+    return isOpposite;
+}
+
 void movement() {
     userIO = getch_noblock();
     userIO = tolower(userIO);
 
     if (userIO == 'w' || userIO == 'a' 
     || userIO == 's' || userIO == 'd') {
-        dir = userIO;
+        if (!isOpposite(userIO, dir)) {
+            dir = userIO;
+        }
     }
 
     moveSnake(dir);
@@ -383,10 +416,27 @@ void removeTail() {
     tail++;
 }
 
+#ifdef INCL_WELCOME_MSG
+void welcomeMessage() {
+    printw("Welcome to crazy snake!, use WASD to move\n");
+    printw("Game starting in 5...\n");
+    refresh();
+    sleep(5);
+}
+#endif
+
 int main() {
     setlocale(LC_ALL, "");
     initscr();
     snakeInit();
+
+    #ifdef INCL_WELCOME_MSG
+    if (!displayedWelcome) {
+        printw("hi\n");
+        welcomeMessage();
+        displayedWelcome = 1;
+    }
+    #endif
 
     while(game) {
         printSquare();
@@ -399,3 +449,4 @@ int main() {
         usleep(75 * 1000);
     }
 }
+
